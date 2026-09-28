@@ -2,6 +2,10 @@
 
 This checklist is the release gate for maintaining the public CarMechanicOS portfolio. The repository was created from a sanitized snapshot rather than copied with private development history.
 
+## Current release record
+
+The initial public snapshot was rechecked on 2026-09-28. One historical Discord webhook found in the private development history was revoked at the provider (HTTP 204). The public tree contains no webhook URL, private-key marker, or machine-specific `[local Windows path]` path. License and third-party asset-rights review remain open before implying broad reuse rights.
+
 ## Required actions for future public changes
 
 1. Re-run a history-wide secret scan and a current-tree scan. Check Discord webhooks, Supabase service-role keys, Cloudflare tunnel tokens, bearer tokens, private keys, database dumps, browser state, local paths, and personal data.
