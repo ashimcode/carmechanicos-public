@@ -1,0 +1,1 @@
+var fso=new ActiveXObject('Scripting.FileSystemObject');var text=fso.OpenTextFile('game.js',1).ReadAll();var lines=text.split('\n');for(var i=1;i<=lines.length;i++){try{eval('function f(){'+lines.slice(0,i).join('\n')+'}');}catch(e){if(e.message!=='Expected \'}\''){WScript.Echo('Error near line '+i+': '+e.message);WScript.Quit();}}};WScript.Echo('No obvious syntax error found.');

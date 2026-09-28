@@ -1,0 +1,54 @@
+name: Security checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate browser game and repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check game.js
+          node --check backend.js
+          node --check serve-local.js
+
+      - name: Scan tracked files for high-risk credentials
+        shell: bash
+        run: |
+          # Exclude this policy text and its own detector patterns from the scan.
+          if git grep -n -I -E 'discord\.com/api/webhooks|service_role|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|cloudflared[^[:space:]]*[[:space:]]+token' -- . ':(exclude)SECURITY.md' ':(exclude)PUBLIC_RELEASE_CHECKLIST.md' ':(exclude).github/workflows/security.yml'; then
+            echo "A high-risk credential pattern was found in tracked files. Rotate it and remove it before merging."
+            exit 1
+          fi
+
+      - name: Reject local runtime artifacts and machine-specific paths
+        shell: bash
+        run: |
+          if git ls-files | grep -E '(^|/)(cloudflared\.exe|\.tmp-chrome-test/|backend-config\.js)$'; then
+            echo "A local runtime artifact is tracked. Keep it outside Git."
+            exit 1
+          fi
+          if git grep -n -I -E 'C:\\\\Users\\\\|C:/Users/|file:///C:/' -- . ':(exclude).github/workflows/security.yml'; then
+            echo "A machine-specific local path is tracked. Replace it with a relative or parameterized path."
+            exit 1
+          fi
+
+      - name: Verify the Supabase policy is owner-scoped
+        shell: bash
+        run: |
+          if grep -Eq 'using[[:space:]]*\(true\)|with check[[:space:]]*\(true\)' docs/supabase-schema.sql; then
+            echo "The Supabase schema contains an anonymous permissive policy."
+            exit 1
+          fi
+          grep -q 'auth.uid()::text' docs/supabase-schema.sql

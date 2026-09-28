@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MechanicOS - Tycoon Terminal</title>
+    <!-- Modern typography from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Chart.js CDN for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css?v=0.2.9">
+    <style>
+        @keyframes marchingAnts {
+            to { stroke-dashoffset: -20; }
+        }
+        .route-line {
+            stroke-dasharray: 10, 10;
+            animation: marchingAnts 1s linear infinite;
+        }
+        #news-ticker-container {
+            position: absolute;
+            bottom: 40px; /* Just above taskbar */
+            left: 0;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            color: #38bdf8;
+            font-family: monospace;
+            font-weight: bold;
+            padding: 4px 0;
+            border-top: 1px solid #334155;
+            z-index: 9998;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        #news-ticker-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker 30s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="desktop">
+        <!-- Global FBI Lockdown Notification -->
+        <div id="global-lockdown-notification" class="hidden" style="position: absolute; top: 0; left: 0; right: 0; background: #9f1239; color: white; text-align: center; padding: 8px; font-weight: bold; font-family: monospace; z-index: 10000; border-bottom: 2px solid #e11d48; display: flex; justify-content: center; align-items: center; gap: 12px; height: 30px;">
+            <span>🚨 FBI LOCKDOWN IN PROGRESS</span>
+            <span id="global-lockdown-countdown" style="color: #fca5a5;">TIME REMAINING: 05:00</span>
+        </div>
+        
+        <div id="app-tutorial-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 100000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+            <div style="background: #1e293b; border: 1px solid #38bdf8; width: 400px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                <div style="background: #0f172a; padding: 12px; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: #38bdf8; font-weight: bold; font-size: 18px;">ℹ</span>
+                    <h2 id="tutorial-modal-title" style="color: #f8fafc; font-size: 16px; margin: 0;">App Guide</h2>
+                </div>
+                <div style="padding: 20px;">
+                    <p id="tutorial-modal-text" style="color: #cbd5e1; font-family: sans-serif; line-height: 1.5; font-size: 14px; margin-bottom: 20px;">Tutorial text goes here.</p>
+                    <button class="btn btn-order" style="width: 100%;" onclick="document.getElementById('app-tutorial-modal').classList.add('hidden')">Got it</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="fbi-imminent-warning" class="hidden" style="position: absolute; top: 30px; left: 0; right: 0; background: rgba(220, 38, 38, 0.8); color: white; text-align: center; padding: 15px; font-weight: bold; font-family: monospace; z-index: 10001; border-bottom: 3px solid #ef4444; pointer-events: none;">
+            🚨 WARNING: FEDERAL CARGO SCAN IMMINENT 🚨
+        </div>
+        <!-- Desktop Shortcuts -->
+        <div class="desktop-shortcuts">
+            <div class="desktop-icon" id="icon-garage">
+                <div class="desktop-icon-symbol">📦</div>
+                <div class="desktop-icon-label">Inventory</div>
+            </div>
+            <div class="desktop-icon" id="icon-globalmap">
+                <div class="desktop-icon-symbol">🌍</div>
+                <div class="desktop-icon-label">GlobalBusinesses.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-office">
+                <div class="desktop-icon-symbol">🚚</div>
+                <div class="desktop-icon-label">Logistics.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-ops">
+                <div class="desktop-icon-symbol">📊</div>
+                <div class="desktop-icon-label">Active Repair Orders</div>
+            </div>
+            <div class="desktop-icon" id="icon-appstore">
+                <div class="desktop-icon-symbol">🏪</div>
+                <div class="desktop-icon-label">App Store</div>
+            </div>
+
+
+            <div class="desktop-icon" id="icon-scrapnet" style="display: none;">
+                <div class="desktop-icon-symbol">📈</div>
+                <div class="desktop-icon-label">ScrapNet.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-dealership" style="display: none;">
+                <div class="desktop-icon-symbol">🚗</div>
+                <div class="desktop-icon-label">Dealership CRM</div>
+            </div>
+            <div class="desktop-icon" id="icon-bank" style="display: none;">
+                <div class="desktop-icon-symbol">🏦</div>
+                <div class="desktop-icon-label">Bank.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-inspections" style="display: none;">
+                <div class="desktop-icon-symbol">🔍</div>
+                <div class="desktop-icon-label">Inspections.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-certifications" style="display: none;">
+                <div class="desktop-icon-symbol">🎓</div>
+                <div class="desktop-icon-label">Certifications.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-settings">
+                <div class="desktop-icon-symbol">⚙️</div>
+                <div class="desktop-icon-label">Settings.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-devpanel">
+                <div class="desktop-icon-symbol">🛠️</div>
+                <div class="desktop-icon-label">DevPanel.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-bugtracker">
+                <div class="desktop-icon-symbol">🐛</div>
+                <div class="desktop-icon-label">BugTracker.exe</div>
+            </div>
+            <div class="desktop-icon" id="icon-travel-junkyard" style="display: none;">
+                <div class="desktop-icon-symbol">🗺️</div>
+                <div class="desktop-icon-label">Junkyard Map</div>
+            </div>
+            <div class="desktop-icon" id="icon-darknet" style="display: none;">
+                <div class="desktop-icon-symbol">🕷️</div>
+                <div class="desktop-icon-label" style="color: #ef4444;">DarkNet.exe</div>
+            </div>
+            <div class="desktop-icon locked" id="icon-playerprofile">
+                <div class="desktop-icon-symbol">👤</div>
+                <div class="desktop-icon-label">PlayerProfile.exe</div>
+                <div class="app-lock-badge">🔒</div>
+            </div>
+        </div>
+
+        <!-- Floating Windows -->
+
+        <!-- Player Profile Window -->
+        <div class="window" id="window-playerprofile" style="top: 100px; left: 150px; width: 450px; height: 500px; display: none;">
+            <div class="window-header">
+                <span class="window-title">👤 PlayerProfile.exe</span>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content" style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Top Section (The HUD) -->
+                <div style="background: rgba(15, 23, 42, 0.5); padding: 15px; border-radius: 8px; border: 1px solid #334155;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+                        <h2 style="margin: 0; color: #38bdf8; font-size: 24px;">Level <span id="profile-level">1</span></h2>
+                        <div style="color: #4ade80; font-weight: bold; font-size: 14px;">Unspent Skill Points: <span id="profile-sp">0</span></div>
+                    </div>
+                    <div style="width: 100%; background: #1e293b; height: 20px; border-radius: 10px; overflow: hidden; border: 1px solid #475569; position: relative;">
+                        <div id="profile-xp-bar" class="xp-bar-fill" style="width: 0%; height: 100%; background: #38bdf8; transition: width 0.3s ease;"></div>
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;">
+                            <span id="profile-xp-text">0 / 100</span>
+                        </div>
+                    </div>
+                    <div class="profile-progression-meta">
+                        <span id="profile-rank">RANK: ROOKIE</span>
+                        <span id="profile-next-unlock">NEXT MILESTONE: LEVEL 2</span>
+                    </div>
+                    <div style="margin-top: 15px; border-top: 1px dashed #334155; padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #94a3b8; font-size: 14px; font-weight: bold;">Empire Color:</span>
+                        <input type="color" id="player-color-picker" value="#38bdf8" style="background: none; border: none; cursor: pointer; width: 30px; height: 30px; padding: 0;">
+                    </div>
+                </div>
+
+                <!-- Bottom Section (The Skill Tree) -->
+                <div>
+                    <h3 style="margin-top: 0; color: #94a3b8; border-bottom: 1px solid #334155; padding-bottom: 5px;">Skill Tree</h3>
+                    <div style="display: flex; flex-direction: column; gap: 10px;" id="profile-skills-list">
+                        <!-- Greasemonkey -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.8); padding: 10px; border-radius: 6px; border: 1px solid #475569;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: bold; color: #f8fafc; font-size: 14px;">Greasemonkey</div>
+                                <div style="color: #94a3b8; font-size: 11px;">Reduces repair time by 5% per level.</div>
+                                <div style="color: #38bdf8; font-size: 12px; margin-top: 4px;">Lvl <span id="skill-greasemonkey-lvl">0</span>/5</div>
+                            </div>
+                            <button id="upgrade-greasemonkey" class="btn" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; font-size: 12px;">Upgrade (1 SP)</button>
+                        </div>
+                        <!-- Smooth Talker -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.8); padding: 10px; border-radius: 6px; border: 1px solid #475569;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: bold; color: #f8fafc; font-size: 14px;">Smooth Talker</div>
+                                <div style="color: #94a3b8; font-size: 11px;">Increases job payouts by 2% per level.</div>
+                                <div style="color: #38bdf8; font-size: 12px; margin-top: 4px;">Lvl <span id="skill-smoothTalker-lvl">0</span>/5</div>
+                            </div>
+                            <button id="upgrade-smoothTalker" class="btn" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; font-size: 12px;">Upgrade (1 SP)</button>
+                        </div>
+                        <!-- Ghost -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.8); padding: 10px; border-radius: 6px; border: 1px solid #475569;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: bold; color: #f8fafc; font-size: 14px;">Ghost</div>
+                                <div style="color: #94a3b8; font-size: 11px;">Reduces daily Heat generation by 10% per level.</div>
+                                <div style="color: #38bdf8; font-size: 12px; margin-top: 4px;">Lvl <span id="skill-ghost-lvl">0</span>/5</div>
+                            </div>
+                            <button id="upgrade-ghost" class="btn" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; font-size: 12px;">Upgrade (1 SP)</button>
+                        </div>
+                        <!-- Second Chance -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.8); padding: 10px; border-radius: 6px; border: 1px solid #475569;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: bold; color: #f8fafc; font-size: 14px;">Second Chance</div>
+                                <div style="color: #94a3b8; font-size: 11px;">Consumable perk. Blocks one FBI Raid or Bankruptcy.</div>
+                                <div style="color: #38bdf8; font-size: 12px; margin-top: 4px;">Lvl <span id="skill-secondChance-lvl">0</span>/1</div>
+                            </div>
+                            <button id="upgrade-secondChance" class="btn" style="background: #0ea5e9; color: white; border: none; padding: 6px 12px; font-size: 12px;">Upgrade (1 SP)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 0. Global Map Window -->
+        <div class="window" id="window-globalmap" style="top: 20px; left: 50px; width: 1050px; height: 650px; display: none; background: #0f172a; resize: none; max-width: 95vw; max-height: 90vh;">
+            <div class="window-header" style="cursor: grab;">
+                <span class="window-title">🌍 GlobalBusinesses.exe - Initial Setup</span>
+                <button onclick="showAppTutorial('globalmap')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content" style="position: relative; height: calc(100% - 30px); padding: 0; display: flex; flex-direction: column;">
+                <div class="app-nav-tabs" style="padding: 10px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; gap: 10px; align-items: center;">
+                    <button id="btn-view-map" class="btn btn-sm" style="flex: 1; background: #38bdf8; color: black; font-weight: bold; border-color: #38bdf8;">Global Map</button>
+                    <button id="btn-view-portfolio" class="btn btn-sm" style="flex: 1; background: #0f172a; border-color: #334155;">Empire Portfolio</button>
+                    <select id="faction-filter-select" class="form-input" style="flex: 1; background: #0f172a; border: 1px solid #38bdf8; color: #38bdf8; font-family: monospace; font-size: 11px; padding: 4px; border-radius: 3px;">
+                        <option value="all">All Organizations</option>
+                        <option value="player">My Empire</option>
+                        <option value="apex">Apex Auto</option>
+                        <option value="scrap">Scrap Syndicate</option>
+                        <option value="euro">EuroTuner Cartel</option>
+                        <option value="iron">Ironclad Logistics</option>
+                        <option value="neon">Neon Drift Org</option>
+                        <option value="black">Black Market Ops</option>
+                    </select>
+                </div>
+                
+                <div id="map-view-container" style="flex: 1; position: relative; height: 100%;">
+                    <!-- Map Area -->
+                    <div class="global-map-container global-businesses-content" style="height: 100%;">
+                    <!-- The inner wrapper that locks the map shape -->
+                    <div class="map-aspect-wrapper">
+                        <!-- Map background decorative grid -->
+                        <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(56, 189, 248, 0.2);"></div>
+                        <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(56, 189, 248, 0.2);"></div>
+                        <svg id="logistics-svg" viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;"></svg>
+                        <div id="global-map-markers">
+                            <!-- Markers injected via JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Floating Sidebar Area -->
+                    <div id="global-map-sidebar" class="floating-map-ui" style="display: none; flex-direction: column; gap: 10px;">
+                        <div id="global-map-location-info" style="display: none; flex-direction: column; gap: 10px;">
+                            <h2 id="gmap-loc-name" style="color: #38bdf8; margin: 0; font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 5px;">Location Name</h2>
+                            <div id="gmap-loc-owner-info"></div>
+                            <div id="gmap-loc-stability-info"></div>
+                            <div class="gmap-stat">
+                                <span class="gmap-stat-label" style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">License Cost:</span>
+                                <span id="gmap-loc-cost" class="gmap-stat-value mono-val" style="color: #4ade80;">$0</span>
+                            </div>
+                            
+                            <div class="gmap-stat">
+                                <span class="gmap-stat-label" style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Rent (Daily):</span>
+                                <span id="gmap-loc-rent" class="gmap-stat-value mono-val" style="color: #f8fafc;">$0</span>
+                            </div>
+                            
+                            <div class="gmap-stat">
+                                <span class="gmap-stat-label" style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Car Classes:</span>
+                                <span id="gmap-loc-classes" class="gmap-stat-value mono-val" style="color: #f8fafc;">A</span>
+                            </div>
+
+                            <div class="gmap-stat">
+                                <span class="gmap-stat-label" style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Bonuses:</span>
+                                <span id="gmap-loc-bonuses" class="gmap-stat-value mono-val" style="color: #fca5a5; font-size: 11px;">None</span>
+                            </div>
+
+                            <div class="gmap-stat">
+                                <span class="gmap-stat-label" style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Difficulty:</span>
+                                <span id="gmap-loc-diff" class="gmap-stat-value mono-val" style="color: #fbbf24;">Medium</span>
+                            </div>
+
+                            <button id="gmap-purchase-btn" class="btn btn-order" style="margin-top: 15px; font-weight: bold; font-size: 14px;">Purchase Business License</button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div id="portfolio-view-container" style="display: none; flex: 1; padding: 20px; overflow-y: auto; background: #0f172a; align-content: flex-start; gap: 15px;">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. Garage Window -->
+        <div class="window" id="window-garage" style="top: 30px; left: 160px; width: 450px; display: none;">
+            <div class="window-header">
+                <span class="window-title">📦 Inventory</span>
+                <button onclick="showAppTutorial('garage')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <!-- Quick Salvage Panel (Fallback Cash Generator) -->
+                <section class="card quick-actions">
+                    <h2>Manual Labor</h2>
+                    <p class="description">No parts? Salvage scrap metal to make some starting cash.</p>
+                    <button id="salvage-btn" class="btn btn-salvage">
+                        <span class="icon">🔩</span> Salvage Scrap Metal (+$1)
+                    </button>
+                </section>
+
+                <!-- Garage Section -->
+                <section class="card garage">
+                    <div class="card-header" style="justify-content: space-between;">
+                        <div style="display:flex; align-items:center;">
+                            <span class="icon">📦</span>
+                            <h2>Global Parts Inventory</h2>
+                        </div>
+                        <div class="store-tabs" style="display:flex; gap: 4px; border-bottom: none;">
+                            <button class="store-tab-btn active" id="inv-filter-a" style="padding: 2px 8px; font-size: 11px; margin-bottom: 0;">Class A</button>
+                            <button class="store-tab-btn" id="inv-filter-b" style="padding: 2px 8px; font-size: 11px; margin-bottom: 0;">Class B</button>
+                            <button class="store-tab-btn" id="inv-filter-c" style="padding: 2px 8px; font-size: 11px; margin-bottom: 0;">Class C</button>
+                        </div>
+                    </div>
+                    <div class="inventory-grid" id="global-inventory-display">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- 2. Office Computer Window -->
+        <div class="window" id="window-office" style="top: 30px; left: 630px; width: 600px; display: none;">
+            <div class="window-header">
+                <span class="window-title">🌎 Logistics.exe</span>
+                <button onclick="showAppTutorial('office')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content" style="display: flex; gap: 16px; padding: 16px;">
+                <!-- Left Panel: Regions List -->
+                <div style="flex: 1; border-right: 1px solid #334155; padding-right: 16px;">
+                    <h3 style="color: #94a3b8; font-size: 12px; margin-bottom: 12px; text-transform: uppercase;">Global Routes</h3>
+                    <div id="logistics-regions-list" style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- JS renders regions here -->
+                    </div>
+                </div>
+                
+                <!-- Right Panel: Region Detail & Supply Chain -->
+                <div style="flex: 2; display: flex; flex-direction: column; gap: 16px;">
+                    <!-- Detail View -->
+                    <section class="card" style="flex: 1; min-height: 250px; display: flex; flex-direction: column; position: relative;">
+                        <div id="logistics-search-container" style="margin-bottom: 12px; display: none; position: sticky; top: 0; z-index: 10;">
+                            <input type="text" id="logistics-search-input" placeholder="🔍 Search parts (e.g., 'Spark', 'Class B')..." 
+                            style="width: 100%; padding: 8px; background: rgba(15, 23, 42, 0.95); border: 1px solid #38bdf8; color: #e2e8f0; border-radius: 4px; font-family: monospace;">
+                        </div>
+                        <div id="logistics-detail-view" style="flex: 1; display: flex; flex-direction: column;">
+                            <div style="color: #64748b; text-align: center; margin: auto;">Select a region to view logistics.</div>
+                        </div>
+                    </section>
+                    
+                    <!-- Panel B: Supply Chain -->
+                    <section class="card ops-card supply-chain-panel">
+                        <div class="card-header">
+                            <span class="icon">📦</span>
+                            <h2>Supply Chain</h2>
+                        </div>
+                        <p class="description">Active parts ordered from global logistics.</p>
+                        <div id="ops-bulk-shipping-container" class="bulk-shipping-container hidden">
+                            <div id="ops-bulk-shipping-list" class="shipments-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        <div id="ops-no-shipment-msg" class="empty-state">No active shipments in transit...</div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Operations Center Window -->
+        <div class="window" id="window-ops" style="top: 400px; left: 160px; width: 500px; display: none;">
+            <div class="window-header">
+                <span class="window-title">📊 Active Repair Orders</span>
+                <button onclick="showAppTutorial('ops')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <div class="ops-grid">
+                    <!-- Panel A: Customer Pipeline -->
+                    <section class="card ops-card customer-pipeline-panel" id="operations-center">
+                        <div class="card-header">
+                            <span class="icon">📋</span>
+                            <h2>Active Repair Orders</h2>
+                        </div>
+                        <p class="description">Active job requests waiting for parts and labor.</p>
+                        <div id="ops-customer-list" class="ops-list">
+                            <div class="empty-state" id="no-customers-msg">Awaiting job requests...</div>
+                        </div>
+                    </section>
+
+                    <!-- Panel B: Operations Contracts -->
+                    <section class="card ops-card operations-contracts-panel">
+                        <div class="card-header">
+                            <span class="icon">🎯</span>
+                            <h2>Operations Contracts</h2>
+                        </div>
+                        <p class="description">Complete strategic objectives to grow your garage reputation and bankroll.</p>
+                        <div id="operations-contracts-list" class="ops-list">
+                            <div class="empty-state">Loading contract board...</div>
+                        </div>
+                    </section>
+
+                    <!-- Panel C: Efficiency Metrics -->
+                    <section class="card ops-card efficiency-metrics-panel">
+                        <div class="card-header">
+                            <span class="icon">📊</span>
+                            <h2>Efficiency Metrics</h2>
+                        </div>
+                        <p class="description">Real-time status updates and flow indicators.</p>
+
+                        <div class="terminal-display">
+                            <div class="metric-row">
+                                <span class="metric-label">SYSTEM STATUS</span>
+                                <span id="system-status-val" class="status-badge status-working">OK</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">CARS FIXED / MIN</span>
+                                <span id="fpm-val" class="metric-val mono-val">0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">APPRENTICE UPTIME</span>
+                                <span id="apprentice-uptime-val" class="metric-val mono-val">0%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">ACTIVE BACKLOG</span>
+                                <span id="backlog-val" class="metric-val mono-val">0 / 5</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">GARAGE REPUTATION</span>
+                                <span id="reputation-val" class="metric-val mono-val">0 / 100</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">CUSTOMER SATISFACTION</span>
+                                <span id="satisfaction-val" class="metric-val mono-val">80%</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Dealership Window -->
+        <div class="window" id="window-dealership" style="top: 400px; left: 680px; width: 550px; display: none;">
+            <div class="window-header">
+                <span class="window-title">🚗 Dealership CRM Dashboard</span>
+                <button onclick="showAppTutorial('dealership')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <div class="dealership-grid">
+                    <!-- KPI Row -->
+                    <div class="kpi-row">
+                        <div class="card kpi-card">
+                            <span class="kpi-label">TOTAL REVENUE</span>
+                            <span class="kpi-value mono-val" id="kpi-revenue">$0</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">VEHICLES SOLD</span>
+                            <span class="kpi-value mono-val" id="kpi-sold">0</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">CONVERSION</span>
+                            <span class="kpi-value mono-val" id="kpi-conversion">100%</span>
+                        </div>
+                    </div>
+
+                    <!-- Line Chart Card -->
+                    <section class="card chart-card">
+                        <div class="card-header">
+                            <span class="icon">📈</span>
+                            <h2>Weekly Total Sales Trend</h2>
+                        </div>
+                        <p class="description">Analysis of sales units closed day-by-day (current week).</p>
+                        <div class="chart-wrapper">
+                            <canvas id="weekly-sales-chart"></canvas>
+                        </div>
+                    </section>
+
+                    <!-- Donut Chart Card -->
+                    <section class="card chart-card">
+                        <div class="card-header">
+                            <span class="icon">🍩</span>
+                            <h2>Sales by Body Style</h2>
+                        </div>
+                        <p class="description">Distribution of repaired inventory sold by design class.</p>
+                        <div class="chart-wrapper">
+                            <canvas id="body-style-chart"></canvas>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. App Store Window -->
+        <div class="window" id="window-appstore" style="top: 100px; left: 240px; width: 360px; display: none;">
+            <div class="window-header">
+                <span class="window-title">🏪 App Store</span>
+                <button onclick="showAppTutorial('appstore')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <section class="card app-store-card">
+                    <h2>Available Apps</h2>
+                    <p class="description">Upgrade your OS with specialized enterprise software modules.</p>
+
+                    <div class="app-list">
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;" id="app-item-dealership">
+                            <div class="app-info">
+                                <span class="app-icon">🚗</span>
+                                <div class="app-details">
+                                    <div class="app-name">Dealership CRM</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #60a5fa;">
+                                        Price: $1,500</div>
+                                </div>
+                            </div>
+                            <button id="buy-app-dealership" class="btn btn-order btn-sm">Buy App</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;" id="app-item-bank">
+                            <div class="app-info">
+                                <span class="app-icon">🏦</span>
+                                <div class="app-details">
+                                    <div class="app-name">Bank.exe</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #4ade80;">
+                                        Price: Free</div>
+                                </div>
+                            </div>
+                            <button id="buy-app-bank" class="btn btn-order btn-sm">Download</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;" id="app-item-inspections">
+                            <div class="app-info">
+                                <span class="app-icon">📋</span>
+                                <div class="app-details">
+                                    <div class="app-name">Inspections App</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #fbbf24;">
+                                        Price: $5,000</div>
+                                </div>
+                            </div>
+                            <button id="buy-app-inspections" class="btn btn-order btn-sm">Buy App</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;" id="app-item-darknet">
+                            <div class="app-info">
+                                <span class="app-icon">🕶️</span>
+                                <div class="app-details">
+                                    <div class="app-name">DarkNet.exe</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #ef4444;">
+                                        Price: $500,000</div>
+                                </div>
+                            </div>
+                            <button id="buy-app-darknet" class="btn btn-order btn-sm">Buy App</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="app-info">
+                                <span class="app-icon">🏪</span>
+                                <div class="app-details">
+                                    <div class="app-name">Inventory</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #94a3b8;">System App</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-order btn-sm" disabled>Downloaded</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="app-info">
+                                <span class="app-icon">💻</span>
+                                <div class="app-details">
+                                    <div class="app-name">Office Computer</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #94a3b8;">System App</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-order btn-sm" disabled>Downloaded</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="app-info">
+                                <span class="app-icon">📊</span>
+                                <div class="app-details">
+                                    <div class="app-name">Active Repair Orders</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #94a3b8;">System App</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-order btn-sm" disabled>Downloaded</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;" id="app-item-scrapnet">
+                            <div class="app-info">
+                                <span class="app-icon">♻️</span>
+                                <div class="app-details">
+                                    <div class="app-name">ScrapNet.exe</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #4ade80;">Free</div>
+                                </div>
+                            </div>
+                            <button id="buy-app-scrapnet" class="btn btn-order btn-sm">Download</button>
+                        </div>
+
+
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;" id="app-item-certifications">
+                            <div class="app-info">
+                                <span class="app-icon">🎓</span>
+                                <div class="app-details">
+                                    <div class="app-name">Certifications.exe</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #fbbf24;">Price: $7,500</div>
+                                </div>
+                            </div>
+                            <button id="buy-app-certifications" class="btn btn-order btn-sm">Buy App</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;" id="app-item-travel-junkyard">
+                            <div class="app-info">
+                                <span class="app-icon">🗺️</span>
+                                <div class="app-details">
+                                    <div class="app-name">Junkyard Map</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #fbbf24;">Price: $7,500</div>
+                                </div>
+                            </div>
+                            <button id="buy-app-travel-junkyard" class="btn btn-order btn-sm">Buy App</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;" id="app-item-bugtracker">
+                            <div class="app-info">
+                                <span class="app-icon">🐛</span>
+                                <div class="app-details">
+                                    <div class="app-name">BugTracker.exe</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #94a3b8;">System App</div>
+                                </div>
+                            </div>
+                            <button id="buy-app-bugtracker" class="btn btn-order btn-sm" disabled>Downloaded</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="app-info">
+                                <span class="app-icon">⚙️</span>
+                                <div class="app-details">
+                                    <div class="app-name">Settings.exe</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #94a3b8;">System App</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-order btn-sm" disabled>Downloaded</button>
+                        </div>
+
+                        <div class="app-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="app-info">
+                                <span class="app-icon">🛠️</span>
+                                <div class="app-details">
+                                    <div class="app-name">DevPanel.exe</div>
+                                    <div class="app-price" style="font-size: 11px; font-weight: 700; color: #94a3b8;">System App</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-order btn-sm" disabled>Downloaded</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- 6. Certifications Window -->
+        <div class="window" id="window-certifications" style="top: 120px; left: 420px; width: 650px; display: none;">
+            <div class="window-header">
+                <span class="window-title">🎓 Certifications.exe</span>
+                <button onclick="showAppTutorial('certifications')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <section class="card certification-hero-card">
+                    <div class="certification-hero-row">
+                        <div>
+                            <h2>Operations Certification Bureau</h2>
+                            <p class="description">License your logistics network, hire delivery workers, and authorize only the skills your certifications support.</p>
+                        </div>
+                        <div id="certification-status" class="status-badge status-idle">NO LICENSE</div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="icon">📜</span>
+                        <h2>Certification Path</h2>
+                    </div>
+                    <p class="description">Each license has a level requirement. Unlocking a license immediately changes which worker upgrades are available.</p>
+                    <div id="certification-paths" class="certification-paths"></div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <span class="icon">🚚</span>
+                        <h2>Delivery Workforce</h2>
+                    </div>
+                    <div id="delivery-workforce-summary" class="workforce-summary"></div>
+                    <div id="delivery-workers-list" class="delivery-workers-list"></div>
+                    <div id="delivery-workforce-actions" class="workforce-actions"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- 6. Bank Window -->
+        <div class="window" id="window-bank" style="top: 150px; left: 300px; width: 380px; display: none;">
+            <div class="window-header">
+                <span class="window-title">🏦 Bank.exe</span>
+                <button onclick="showAppTutorial('bank')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <section class="card bank-card">
+                    <h2>First National Bank</h2>
+                    <p class="description">Need extra capital? Access small business loans to jumpstart your empire. Loans incur a 5% interest rate per day.</p>
+
+                    <div class="bank-loan-control">
+                        <div class="loan-stats"
+                            style="background: rgba(15, 23, 42, 0.2); padding: 12px; border-radius: var(--border-radius); border: 1px solid rgba(255, 255, 255, 0.02); display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <div class="stat-row"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="kpi-label">TOTAL LOAN BALANCE</span>
+                                <span class="kpi-value mono-val" id="loan-amount-val">$0</span>
+                            </div>
+                            <div class="stat-row"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="kpi-label">INTEREST RATE TIER</span>
+                                <span class="kpi-value mono-val" id="loan-interest-rate" style="color: #ef4444;">5% / Daily</span>
+                            </div>
+                        </div>
+                        <button id="take-loan-btn" class="btn btn-hire">
+                            Take $10,000 Starter Loan
+                        </button>
+                        <button id="repay-loan-btn" class="btn btn-salvage" style="margin-top: 8px;" disabled>
+                            Pay Off $10,000 Loan
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- 7. ScrapNet Window -->
+        <div class="window" id="window-scrapnet" style="top: 220px; left: 540px; width: 420px; display: none;">
+            <div class="window-header">
+                <span class="window-title">📈 ScrapNet Exchange</span>
+                <button onclick="showAppTutorial('scrapnet')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <section class="card financial-terminal">
+                    <h2>Live Commodity Feeds</h2>
+                    <p class="description">Real-time stock values for manufacturing parts and raw metal scrap.</p>
+
+                    <div class="ticker-container">
+                        <!-- Dynamically populated by renderScrapNetUI -->
+                    </div>
+
+                    <div id="market-alert" class="market-alert hidden"></div>
+                </section>
+            </div>
+        </div>
+
+
+
+        <!-- 9. Safety Inspections Window -->
+        <div class="window" id="window-inspections" style="top: 250px; left: 400px; width: 450px; display: none;">
+            <div class="window-header">
+                <span class="window-title">🔍 Safety Inspections</span>
+                <button onclick="showAppTutorial('inspections')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <!-- Nav Tabs -->
+                <div class="store-tabs" style="margin-bottom: 12px; display: flex; gap: 8px;">
+                    <button class="store-tab-btn active" id="tab-inspection-terminal" style="flex:1;">Diagnostics Terminal</button>
+                    <button class="store-tab-btn" id="tab-inspection-vehicle" style="flex:1;" disabled>Vehicle Bay</button>
+                    <button class="store-tab-btn" id="tab-inspection-billing" style="flex:1;" disabled>Billing & Records</button>
+                    <button class="store-tab-btn" id="tab-inspection-history" style="flex:1;">Service History</button>
+                </div>
+
+                <!-- Terminal Tab -->
+                <div id="inspection-view-terminal">
+                    <section class="card inspections-card">
+                        <h2>Multi-Point Diagnostic Terminal</h2>
+                        <p class="description">Run high-yield diagnostic scans and safety inspections on fleet vehicles. Yields $800 - $1,200 base fee upon finalization.</p>
+
+                        <div class="inspection-control">
+                            <button id="start-inspection-btn" class="btn btn-order">
+                                Start Multi-Point Inspection
+                            </button>
+
+                            <!-- Papers Please: Document Verification Panel -->
+                            <div id="paperwork-verification-panel" class="hidden" style="margin-top: 16px; background: rgba(15, 23, 42, 0.6); padding: 12px; border: 1px solid #38bdf8; border-radius: 4px;">
+                                <h3 style="color: #38bdf8; margin-bottom: 12px; text-align: center; font-size: 13px;">📋 NYS DMV vs. Physical Paperwork</h3>
+                                <div style="display: flex; gap: 12px; font-family: monospace; font-size: 11px;">
+                                    <div style="flex: 1; border: 1px solid #475569; padding: 8px; background: #0f172a; border-radius: 3px; line-height: 1.6;">
+                                        <strong style="color: #4ade80; display: block; margin-bottom: 6px;">NYS DMV DATABASE</strong>
+                                        VIN: <span id="dmv-vin" style="color: #e2e8f0;"></span><br>
+                                        Owner: <span id="dmv-owner" style="color: #e2e8f0;"></span><br>
+                                        Plate: <span id="dmv-plate" style="color: #e2e8f0;"></span><br>
+                                        Color: <span id="dmv-color" style="color: #e2e8f0;"></span><br>
+                                        Status: <span id="dmv-status" style="color: #4ade80;">VALID</span>
+                                    </div>
+                                    <div style="flex: 1; border: 1px solid #475569; padding: 8px; background: #0f172a; border-radius: 3px; line-height: 1.6;">
+                                        <strong style="color: #fca5a5; display: block; margin-bottom: 6px;">PHYSICAL DASHBOARD</strong>
+                                        VIN: <span id="phys-vin" style="color: #e2e8f0;"></span><br>
+                                        Owner: <span id="phys-owner" style="color: #e2e8f0;"></span><br>
+                                        Plate: <span id="phys-plate" style="color: #e2e8f0;"></span><br>
+                                        Color: <span id="phys-color" style="color: #e2e8f0;"></span><br>
+                                        Exp: <span id="phys-exp" style="color: #e2e8f0;"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Audit Checklist -->
+                                <div id="audit-checklist-container" style="margin-top: 12px; padding: 10px; border: 1px dashed #38bdf8; border-radius: 4px; background: rgba(15, 23, 42, 0.4); font-family: monospace; font-size: 11px;">
+                                    <div style="color: #38bdf8; font-weight: bold; margin-bottom: 8px; text-align: center; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em;">Audit Verification Checklist</div>
+                                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                                        <label class="checklist-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #94a3b8; transition: all 0.2s ease;">
+                                            <input type="checkbox" class="audit-checkbox" value="vin" style="cursor: pointer;">
+                                            <span>VIN: DMV matches Physical Dashboard</span>
+                                        </label>
+                                        <label class="checklist-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #94a3b8; transition: all 0.2s ease;">
+                                            <input type="checkbox" class="audit-checkbox" value="owner" style="cursor: pointer;">
+                                            <span>Owner Name: DMV matches Physical Dashboard</span>
+                                        </label>
+                                        <label class="checklist-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #94a3b8; transition: all 0.2s ease;">
+                                            <input type="checkbox" class="audit-checkbox" value="plate" style="cursor: pointer;">
+                                            <span>License Plate: DMV matches Physical Dashboard</span>
+                                        </label>
+                                        <label class="checklist-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #94a3b8; transition: all 0.2s ease;">
+                                            <input type="checkbox" class="audit-checkbox" value="color" style="cursor: pointer;">
+                                            <span>Vehicle Color: DMV matches Physical Dashboard</span>
+                                        </label>
+                                        <label class="checklist-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #94a3b8; transition: all 0.2s ease;">
+                                            <input type="checkbox" class="audit-checkbox" value="reg" style="cursor: pointer;">
+                                            <span>Registration Status: DMV Status VALID & Expiry in future</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div id="verification-result-msg" class="hidden" style="margin-top: 10px; padding: 8px; border-radius: 3px; font-family: monospace; font-size: 11px; text-align: center; font-weight: bold;"></div>
+                                <div id="verification-buttons" style="display: flex; gap: 8px; margin-top: 12px;">
+                                    <button id="verify-pass-btn" class="btn btn-order btn-sm" style="flex: 1; opacity: 0.5; cursor: not-allowed;" disabled>✅ Match - Start Scan</button>
+                                    <button id="verify-fail-btn" class="btn btn-salvage btn-sm" style="flex: 1; background: #9f1239;">❌ Reject - Issue $88 Fine</button>
+                                </div>
+                            </div>
+
+                            <div id="inspection-active-state" class="hidden" style="margin-top: 16px;">
+                                <div class="inspection-status-row"
+                                    style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span id="inspection-status-text" class="status-badge status-working">Initializing Scan...</span>
+                                    <span id="inspection-timer-text" class="mono-val">10.0s</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div id="inspection-progress-bar" class="progress-bar"
+                                        style="background: linear-gradient(to right, #10b981, #34d399); width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <div id="inspection-report-card" class="report-card hidden"
+                                style="margin-top: 16px; background: rgba(15, 23, 42, 0.4); border: 1px solid var(--card-border); padding: 12px; border-radius: var(--border-radius);">
+                                <h3 style="color: #10b981; margin-bottom: 6px;">📝 Safety Report Completed</h3>
+                                <div id="report-details"
+                                    style="font-family: monospace; font-size: 11px; line-height: 1.5; color: #94a3b8; white-space: pre-wrap; margin-bottom: 12px;">
+                                    <!-- Populated dynamically -->
+                                </div>
+                                <button id="auth-inspection-btn" class="btn btn-order" style="width: 100%;">Send for Customer Authorization</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Vehicle Bay Tab -->
+                <div id="inspection-view-vehicle" class="hidden">
+                    <section class="card vehicle-bay-card" style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2>Vehicle Diagnostics</h2>
+                            <span id="inspection-vehicle-name" style="font-weight: 700; color: #cbd5e1;">None</span>
+                        </div>
+                        
+                        <div class="car-diagram-container">
+                            <div class="car-zone zone-area-engine" data-system="Engine">Engine</div>
+                            <div class="car-zone zone-area-cooling" data-system="Cooling">Cooling</div>
+                            <div class="car-zone zone-area-transmission" data-system="Transmission">Trans.</div>
+                            <div class="car-zone zone-area-electrical" data-system="Electrical">Elec.</div>
+                            <div class="car-zone zone-area-brakes" data-system="Brakes">Brakes</div>
+                            <div class="car-zone zone-area-suspension" data-system="Suspension">Susp.</div>
+                            <div class="car-zone zone-area-exhaust" data-system="Exhaust">Exhaust</div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Billing Tab -->
+                <div id="inspection-view-billing" class="hidden">
+                    <section class="card billing-card" style="display: flex; flex-direction: column; gap: 16px;">
+                        <h2>Billing & Records</h2>
+                        <div style="background: white; color: black; padding: 16px; border-radius: 4px; font-family: monospace; font-size: 12px;">
+                            <h3 style="text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 8px; font-weight: bold; font-size: 14px;">FORM VS-1074 INVOICE</h3>
+                            <div id="billing-receipt" style="white-space: pre-wrap; line-height: 1.5;"></div>
+                        </div>
+                        <button id="send-inspection-bill-btn" class="btn btn-order" style="width: 100%;">Finalize & Collect Payment</button>
+                    </section>
+                </div>
+                
+                <!-- Service History Tab -->
+                <div id="inspection-view-history" class="hidden">
+                    <section class="card history-card" style="display: flex; flex-direction: column; gap: 16px;">
+                        <h2>Service History</h2>
+                        <p class="description">Review the last 5 completed safety inspection jobs.</p>
+                        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #38bdf8; padding: 12px; border-radius: 4px; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid #38bdf8; color: #38bdf8; font-weight: bold;">
+                                        <th style="padding: 8px;">DATE</th>
+                                        <th style="padding: 8px;">VEHICLE MODEL</th>
+                                        <th style="padding: 8px;">VIN</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-list-body">
+                                    <tr>
+                                        <td colspan="3" style="padding: 16px; text-align: center; color: #64748b;">No completed jobs on record.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- 8. Settings Window -->
+        <div class="window" id="window-settings" style="top: 100px; left: 100px; width: 350px; display: none;">
+            <div class="window-header">
+                <span class="window-title">⚙️ Settings.exe</span>
+                <button onclick="showAppTutorial('settings')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-full-btn">&#128470;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <section class="card">
+                    <h2>Appearance Themes</h2>
+                    <p class="description">Select a 1-click personalization theme.</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                        <button class="btn btn-hire theme-btn" data-theme="#000000">Dark Terminal</button>
+                        <button class="btn btn-hire theme-btn" data-theme="linear-gradient(135deg, #0f172a, #1e3a8a)">Blue Gradient</button>
+                        <button class="btn btn-hire theme-btn" data-theme="url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80') center/cover">Deep Space</button>
+                        <button class="btn btn-hire theme-btn" data-theme="#1c1917">Slate Gray</button>
+                    </div>
+                </section>
+                <section class="card" style="margin-top: 14px; border-color: #ef4444;">
+                    <h2 style="color: #ef4444;">Data Management</h2>
+                    <p class="description">Permanently delete your save file and start fresh from Day 1.</p>
+                    <button id="btn-factory-reset" class="btn btn-salvage" style="background: #ef4444; border-color: #991b1b; color: white; width: 100%; font-weight: bold; margin-top: 8px;">
+                        ⚠️ FACTORY RESET (WIPE SAVE)
+                    </button>
+                </section>
+            </div>
+        </div>
+
+        <!-- 9. Developer Console Window -->
+        <div class="window" id="window-devpanel" style="top: 100px; left: 300px; width: 420px; display: none;">
+            <div class="window-header"
+                style="background: linear-gradient(to right, #062f2f, #041d1d); border-bottom: 1px solid #115e59;">
+                <span class="window-title" style="color: #14b8a6; font-family: monospace;">💻 DevPanel.exe - Developer
+                    Command Center</span>
+                <button onclick="showAppTutorial('devpanel')" style="background: transparent; border: none; color: #14b8a6; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-max-btn" style="color: #14b8a6;">&#9633;</button>
+                    <button class="window-close-btn" style="color: #14b8a6;">&times;</button>
+                </div>
+            </div>
+            <div class="window-content"
+                style="background: #050811; border: 1px solid #115e59; font-family: 'Consolas', monospace; display: flex; flex-direction: column; gap: 14px;">
+                <section class="card dev-card"
+                    style="background: transparent; border: none; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+                    <h2
+                        style="color: #14b8a6; border-bottom: 1px solid #115e59; padding-bottom: 6px; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                        SYSTEM MANIPULATION INTERFACE</h2>
+
+                    <!-- Cash modification -->
+                    <div>
+                        <label
+                            style="color: #14b8a6; font-size: 10px; display: block; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">CASH
+                            ADJUSTMENT ($):</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="dev-cash-input" value="10000" class="form-input"
+                                style="background: #0f172a; border: 1px solid #0f766e; color: #14b8a6; font-family: monospace; flex: 1; padding: 6px 10px; border-radius: 3px; font-size: 13px;">
+                            <button id="dev-set-cash-btn" class="btn btn-order btn-sm"
+                                style="background: #0f766e; width: auto; font-family: monospace; padding: 6px 14px; font-weight: bold; border-radius: 3px; color: #ffffff; border: none; cursor: pointer;">SET
+                                CASH</button>
+                        </div>
+                    </div>
+
+                    <!-- Parts Injection -->
+                    <div>
+                        <label
+                            style="color: #14b8a6; font-size: 10px; display: block; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">INJECT
+                            PART TO INVENTORY:</label>
+                        <div style="display: flex; gap: 8px; flex-direction: column;">
+                            <div style="display: flex; gap: 8px;">
+                                <select id="dev-part-select" class="form-input"
+                                    style="background: #0f172a; border: 1px solid #0f766e; color: #14b8a6; font-family: monospace; flex: 2; padding: 6px 10px; border-radius: 3px; font-size: 12px;">
+                                    <!-- Populated dynamically in JS -->
+                                </select>
+                                <select id="dev-brand-select" class="form-input"
+                                    style="background: #0f172a; border: 1px solid #0f766e; color: #14b8a6; font-family: monospace; flex: 1; padding: 6px 10px; border-radius: 3px; font-size: 12px;">
+                                    <option value="classA">Economy (A)</option>
+                                    <option value="classB">Standard (B)</option>
+                                    <option value="classC">Luxury (C)</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="number" id="dev-part-qty" value="10" class="form-input"
+                                    style="background: #0f172a; border: 1px solid #0f766e; color: #14b8a6; font-family: monospace; width: 80px; padding: 6px 10px; border-radius: 3px; font-size: 13px;">
+                                <button id="dev-inject-part-btn" class="btn btn-order btn-sm"
+                                    style="background: #0f766e; width: auto; font-family: monospace; flex: 1; padding: 6px 14px; font-weight: bold; border-radius: 3px; color: #ffffff; border: none; cursor: pointer;">INJECT
+                                    ITEMS</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Market Override -->
+                    <div>
+                        <label style="color: #14b8a6; font-size: 10px; display: block; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">MARKET OVERRIDE (SET PRICE):</label>
+                        <div style="display: flex; gap: 8px; flex-direction: column;">
+                            <select id="dev-price-part-select" class="form-input" style="background: #0f172a; border: 1px solid #0f766e; color: #14b8a6; font-family: monospace; flex: 2; padding: 6px 10px; border-radius: 3px; font-size: 12px;">
+                                <!-- Populated dynamically in JS -->
+                            </select>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="number" id="dev-part-price-input" value="1" class="form-input" style="background: #0f172a; border: 1px solid #0f766e; color: #14b8a6; font-family: monospace; width: 80px; padding: 6px 10px; border-radius: 3px; font-size: 13px;">
+                                <button id="dev-set-price-btn" class="btn btn-order btn-sm" style="background: #0f766e; width: auto; font-family: monospace; flex: 1; padding: 6px 14px; font-weight: bold; border-radius: 3px; color: #ffffff; border: none; cursor: pointer;">OVERRIDE</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Spawning -->
+                    <div style="margin-top: 8px; border-top: 1px solid #115e59; padding-top: 12px;">
+                        <button id="dev-btn-cash" class="btn btn-fix"
+                        style="width: 100%; background: #0f766e; border-color: #115e59; color: #ccfbf1; font-family: monospace;">+ Inject $10,000</button>
+                    <button id="dev-btn-trigger-fbi" class="btn btn-fix"
+                        style="width: 100%; background: #991b1b; border-color: #7f1d1d; color: #fee2e2; font-family: monospace;">🚨 Trigger FBI Scan</button>
+                    <button id="dev-btn-force-warning" class="btn btn-fix" 
+                        style="width: 100%; background: #991b1b; border-color: #7f1d1d; color: #fee2e2; font-family: monospace; margin-top: 8px;">
+                        🚨 FORCE SCAN WARNING (30s)
+                    </button>
+                        <button id="dev-spawn-order-btn" class="btn btn-fix btn-sm"
+                            style="background: #9f1239; border: 1px solid #f43f5e; font-family: monospace; padding: 8px 16px; width: 100%; border-radius: 3px; color: #ffffff; font-weight: bold; cursor: pointer;">SPAWN
+                            RANDOM REPAIR ORDER</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Phone Call Floating Widget (Softphone) -->
+        <div id="phone-widget" class="softphone-widget">
+            <!-- 1. Ringing View -->
+            <div id="phone-ringing-view" class="phone-view">
+                <div class="phone-incoming-header">
+                    <div class="phone-ring-animation">📞</div>
+                    <div>
+                        <span class="incoming-label">INCOMING CALL...</span>
+                        <div class="caller-id" id="caller-id-text">Unknown Caller</div>
+                    </div>
+                </div>
+                <div class="phone-ring-actions">
+                    <button id="call-answer-btn" class="btn btn-order btn-sm">Answer</button>
+                    <button id="call-decline-btn" class="btn btn-salvage btn-sm">Decline</button>
+                </div>
+            </div>
+
+            <!-- 2. Active Call View -->
+            <div id="phone-active-view" class="phone-view hidden">
+                <div class="phone-active-header">
+                    <span class="call-active-status">🟢 ACTIVE CALL</span>
+                    <span id="active-caller-name" class="active-caller-name">Customer</span>
+                </div>
+
+                <div class="phone-message-bubble">
+                    <span class="terminal-prompt">></span>
+                    <p id="caller-speech-text">Connecting...</p>
+                </div>
+
+                <!-- Haggling & Action Choices inside the widget -->
+                <div class="phone-actions">
+                    <button id="call-accept-btn" class="btn btn-order">Accept (+$25)</button>
+                    <button id="call-quote-btn" class="btn btn-fix">Quote Price</button>
+                    <button id="call-hangup-btn" class="btn btn-salvage">Decline</button>
+                </div>
+
+                <div id="call-haggle-result" class="haggle-result hidden"></div>
+            </div>
+        </div>
+
+        <!-- 10. BugTracker Window -->
+        <div class="window" id="window-bugtracker" style="top: 120px; left: 120px; width: 380px; display: none;">
+            <div class="window-header">
+                <span class="window-title">🐛 BugTracker.exe</span>
+                <button onclick="showAppTutorial('bugtracker')" style="background: transparent; border: none; color: #38bdf8; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-min-btn">&minus;</button>
+                    <button class="window-max-btn">&#9633;</button>
+                    <button class="window-close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <section class="card bugtracker-card">
+                    <h2>QA Feedback Ticket</h2>
+                    <p class="description">Submit bugs or feature requests directly to the developer.</p>
+                    
+                    <form id="bugtracker-form" action="#" method="POST" autocomplete="off" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+                        <select name="issueType" id="issueType" class="form-input" required style="background: #0f172a; border: 1px solid #38bdf8; color: #e2e8f0; font-family: monospace; padding: 8px; border-radius: 4px;">
+                            <option value="">-- Select Issue Type --</option>
+                            <option value="Bug">Bug / Glitch</option>
+                            <option value="Typo">Typo</option>
+                            <option value="Economy Balance">Economy Balance</option>
+                            <option value="Feature Request">Feature Request</option>
+                        </select>
+                        <input type="text" name="testerId" id="playerName" class="form-input" placeholder="Player Name / Tester ID" required style="background: #0f172a; border: 1px solid #38bdf8; color: #e2e8f0; font-family: monospace; padding: 8px; border-radius: 4px;">
+                        <textarea name="description" id="description" class="form-input" placeholder="Describe the issue in detail..." required style="background: #0f172a; border: 1px solid #38bdf8; color: #e2e8f0; font-family: monospace; padding: 8px; border-radius: 4px; height: 100px; resize: none;"></textarea>
+                        
+                        <button type="submit" class="btn btn-order" id="bugtracker-submit-btn">Submit Ticket</button>
+                    </form>
+                    
+                    <div id="bugtracker-success" class="hidden" style="margin-top: 16px; padding: 12px; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; border-radius: 4px; color: #10b981; font-family: monospace; text-align: center;">
+                        Ticket Submitted to Developer!
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 10. DarkNet Window -->
+        <div class="window" id="window-darknet" style="top: 150px; left: 200px; width: 450px; display: none; border-color: #ef4444;">
+            <div class="window-header" style="background: rgba(153, 27, 27, 0.4); border-bottom-color: #ef4444;">
+                <span class="window-title" style="color: #ef4444;">🕷️ DarkNet.exe</span>
+                <button onclick="showAppTutorial('darknet')" style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-weight: bold; margin-left: auto; margin-right: 8px;" title="App Guide">[ ! ]</button>
+                <div class="window-controls">
+                    <button class="window-max-btn" style="color: #ef4444;">&#9633;</button>
+                    <button class="window-close-btn" style="color: #ef4444;">&times;</button>
+                </div>
+            </div>
+            <div class="window-content" style="background: rgba(10, 10, 10, 0.95); display: flex; flex-direction: column;">
+                <div id="darknet-heat-meter-container" style="background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; border-radius: 4px; padding: 10px; margin-bottom: 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; pointer-events: none; user-select: none;">
+                    <span style="color: #fca5a5; font-weight: bold; font-size: 11px; letter-spacing: 0.5px;">WANTED LEVEL / FBI HEAT:</span>
+                    <span id="darknet-heat-meter" style="color: #10b981; font-weight: bold; font-size: 13px; text-shadow: 0 0 5px rgba(16, 185, 129, 0.4);">0.0% (SAFE)</span>
+                </div>
+                <div class="store-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <button class="btn btn-sm darknet-tab-btn active" data-target="darknet-view-market">Black Market</button>
+                    <button class="btn btn-sm darknet-tab-btn" data-target="darknet-view-transit">Encrypted Transit</button>
+                    <button class="btn btn-sm darknet-tab-btn" data-target="darknet-view-stash">Stash House</button>
+                    <button class="btn btn-sm darknet-tab-btn" data-target="darknet-view-sabotage">Interception</button>
+                    <button class="btn btn-sm darknet-tab-btn" data-target="darknet-view-decryption">Decryption</button>
+                </div>
+
+                <!-- View: Market -->
+                <div id="darknet-view-market">
+                    <div class="darknet-header" style="text-align: center; padding: 10px 0; border-bottom: 1px dashed #ef4444; margin-bottom: 16px;">
+                        <h2 style="color: #ef4444; margin-bottom: 8px; font-size: 16px;">THE UNDERGROUND MARKET</h2>
+                        <p style="color: #fca5a5; font-size: 11px;">Untraceable parts for high-risk street racing. No refunds. Buyer assumes all legal risk.</p>
+                    </div>
+                    
+                    <!-- Gated App Store Sub-Tabs -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <button class="btn btn-sm darknet-market-tab active" id="darknet-tab-parts" style="flex: 1; border-color: #ef4444; color: white; background: #ef4444;">📦 Illegal Parts</button>
+                        <button class="btn btn-sm darknet-market-tab" id="darknet-tab-tools" style="flex: 1; border-color: #ef4444; color: #ef4444; background: transparent;">⚙️ Illegal Tools</button>
+                    </div>
+
+                    <input type="text" id="darknet-search-input" class="form-input" placeholder="Search Underground Market..." style="margin-bottom: 12px; border-color: #ef4444; color: #ef4444;">
+                    
+                    <!-- Category Filters -->
+                    <div id="darknet-parts-filters" class="darknet-category-filters" style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <button class="btn btn-sm darknet-filter-btn active" data-category="All" style="flex: 1; padding: 4px 8px; font-size: 11px; background: #ef4444; border-color: #991b1b; color: white;">All</button>
+                        <button class="btn btn-sm darknet-filter-btn" data-category="Performance" style="flex: 1; padding: 4px 8px; font-size: 11px; border-color: #ef4444; color: #ef4444; background: transparent;">Performance</button>
+                        <button class="btn btn-sm darknet-filter-btn" data-category="Fabrication" style="flex: 1; padding: 4px 8px; font-size: 11px; border-color: #ef4444; color: #ef4444; background: transparent;">Fabrication</button>
+                        <button class="btn btn-sm darknet-filter-btn" data-category="Electronics" style="flex: 1; padding: 4px 8px; font-size: 11px; border-color: #ef4444; color: #ef4444; background: transparent;">Electronics</button>
+                        <button class="btn btn-sm darknet-filter-btn" data-category="Utility" style="flex: 1; padding: 4px 8px; font-size: 11px; border-color: #ef4444; color: #ef4444; background: transparent;">Utility</button>
+                    </div>
+
+                    <div id="darknet-items-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 350px; overflow-y: auto; padding-right: 8px;">
+                        <!-- JS renders classX parts here -->
+                    </div>
+                </div>
+
+                <!-- View: Encrypted Transit -->
+                <div id="darknet-view-transit" class="hidden">
+                    <div class="darknet-header" style="text-align: center; padding: 10px 0; border-bottom: 1px dashed #ef4444; margin-bottom: 16px;">
+                        <h2 style="color: #ef4444; margin-bottom: 8px; font-size: 16px;">ENCRYPTED TRANSIT</h2>
+                        <p style="color: #fca5a5; font-size: 11px;">Tracking illicit shipments over decentralized relays.</p>
+                    </div>
+                    <div id="darknet-shipments-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 350px; overflow-y: auto; padding-right: 8px;">
+                        <!-- JS renders darknet shipments here -->
+                    </div>
+                </div>
+
+                <!-- View: Stash House -->
+                <div id="darknet-view-stash" class="hidden">
+                    <div class="darknet-header" style="text-align: center; padding: 10px 0; border-bottom: 1px dashed #ef4444; margin-bottom: 16px;">
+                        <h2 style="color: #ef4444; margin-bottom: 8px; font-size: 16px;">STASH HOUSE</h2>
+                        <p style="color: #fca5a5; font-size: 11px;">Your secured off-site inventory. Kept away from legal prying eyes.</p>
+                    </div>
+                    <div id="darknet-inventory-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-height: 350px; overflow-y: auto; padding-right: 8px;">
+                        <!-- JS renders classX inventory here -->
+                    </div>
+                </div>
+
+                <div id="darknet-view-sabotage" class="hidden">
+                    <div class="darknet-header" style="text-align: center; padding: 10px 0; border-bottom: 1px dashed #ef4444; margin-bottom: 16px;">
+                        <h2 style="color: #ef4444; margin-bottom: 8px; font-size: 16px;">SUPPLY CHAIN INTERCEPTION</h2>
+                        <p style="color: #fca5a5; font-size: 11px;">Target rival shipments. High heat, massive financial damage.</p>
+                    </div>
+                    <div id="darknet-sabotage-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 350px; overflow-y: auto; padding-right: 8px;">
+                        <!-- JS renders sabotage routes here -->
+                    </div>
+                </div>
+
+                <!-- View: Ransomware Decryption -->
+                <div id="darknet-view-decryption" class="hidden">
+                    <div class="darknet-header" style="text-align: center; padding: 10px 0; border-bottom: 1px dashed #ef4444; margin-bottom: 16px;">
+                        <h2 style="color: #ef4444; margin-bottom: 8px; font-size: 16px;">RANSOMWARE DECRYPTION</h2>
+                        <p style="color: #fca5a5; font-size: 11px;">Pay the ransom or execute a high-risk counter-hack to recover your locked assets.</p>
+                    </div>
+                    <div id="darknet-decryption-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 350px; overflow-y: auto; padding-right: 8px;">
+                        <!-- JS renders decryption targets here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location: Salvage Map Overlay -->
+        <div id="location-salvagemap" class="location-screen hidden" style="background: linear-gradient(rgba(10, 15, 20, 0.85), rgba(10, 15, 20, 0.95)), url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80') center/cover;">
+            <div class="location-header" style="text-align: center; padding-top: 40px;">
+                <h1 style="color: #38bdf8; font-size: 32px; font-weight: 800; margin-bottom: 8px;">Regional Salvage Map</h1>
+                <p style="color: #94a3b8; margin-bottom: 24px;">Pay expedition fees to hunt for discounted parts in specific zones.</p>
+                <button class="btn btn-salvage" onclick="closeSalvageMap()">Return to OS</button>
+            </div>
+
+            <div class="salvage-zones" style="display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin-top: 40px; padding: 0 24px;">
+                <div class="card salvage-zone-card" style="width: 280px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; backdrop-filter: blur(8px); text-align: center;">
+                    <h3 style="color: #e2e8f0; font-size: 20px; margin-bottom: 8px;">Scrap Outskirts</h3>
+                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 16px;">Venture into the abandoned suburban lots. Yields Economy (Class A) parts.</p>
+                    <div style="font-weight: 700; color: #10b981; margin-bottom: 16px;">Expedition Fee: $500</div>
+                    <button class="btn btn-order" onclick="searchSalvageZone('classA', 500)">Search Zone</button>
+                </div>
+
+                <div class="card salvage-zone-card" style="width: 280px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; backdrop-filter: blur(8px); text-align: center;">
+                    <h3 style="color: #e2e8f0; font-size: 20px; margin-bottom: 8px;">Industrial Sector</h3>
+                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 16px;">Search abandoned manufacturing plants. Yields Standard (Class B) parts.</p>
+                    <div style="font-weight: 700; color: #10b981; margin-bottom: 16px;">Expedition Fee: $3,000</div>
+                    <button class="btn btn-order" onclick="searchSalvageZone('classB', 3000)">Search Zone</button>
+                </div>
+
+                <div class="card salvage-zone-card" style="width: 280px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; backdrop-filter: blur(8px); text-align: center;">
+                    <h3 style="color: #e2e8f0; font-size: 20px; margin-bottom: 8px;">Executive Yard</h3>
+                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 16px;">High-end vehicle graveyard. High risk, high reward. Yields Premium (Class C) parts.</p>
+                    <div style="font-weight: 700; color: #10b981; margin-bottom: 16px;">Expedition Fee: $10,000</div>
+                    <button class="btn btn-order" onclick="searchSalvageZone('classC', 10000)">Search Zone</button>
+                </div>
+            </div>
+
+            <!-- Loot Modal -->
+            <div id="salvage-loot-modal" class="hidden" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; background: rgba(15, 23, 42, 0.95); border: 1px solid #38bdf8; border-radius: 8px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); backdrop-filter: blur(12px); z-index: 1000;">
+                <h2 style="color: #e2e8f0; margin-bottom: 8px;">Expedition Results</h2>
+                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 16px;">You found the following salvageable parts. Purchase them now before the locals scavenge them.</p>
+                <div id="salvage-loot-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto; margin-bottom: 16px;">
+                    <!-- JS renders loot here -->
+                </div>
+                <button class="btn btn-salvage" onclick="closeSalvageLootModal()" style="width: 100%;">Leave Zone</button>
+            </div>
+        </div>
+
+        <!-- FBI Security Scan Overlay -->
+        <div id="fbi-scan-modal" class="location-screen hidden" style="background: rgba(0, 0, 0, 0.95); z-index: 9999; justify-content: center; align-items: center;">
+            <div style="width: 500px; border: 2px solid #ef4444; background: #000; padding: 40px; text-align: center; box-shadow: 0 0 50px rgba(239, 68, 68, 0.5);">
+                <h1 style="color: #ef4444; font-size: 48px; font-weight: 900; margin-bottom: 20px; letter-spacing: 4px;">FEDERAL WARNING</h1>
+                <h2 id="fbi-scan-status" style="color: #38bdf8; font-family: monospace; font-size: 24px; margin-bottom: 30px;">SCANNING INVENTORY...</h2>
+                <div id="fbi-scan-results" style="color: #fca5a5; font-family: monospace; font-size: 16px; margin-bottom: 30px; min-height: 48px;">
+                    Please stand by. Initiating deep packet inspection.
+                </div>
+                <button id="fbi-acknowledge-btn" class="btn hidden" style="background: #ef4444; color: white; width: 100%; font-size: 18px; padding: 16px; font-weight: bold; cursor: pointer;">ACKNOWLEDGE</button>
+            </div>
+        </div>
+
+        <!-- Smuggler Grid Mini-Game Modal -->
+        <div id="smuggle-grid-modal" class="location-screen hidden" style="background: rgba(10, 15, 20, 0.95); z-index: 10000; justify-content: center; align-items: center; display: flex;">
+            <div style="width: 420px; background: #090d16; border: 2px solid #ef4444; border-radius: 8px; padding: 24px; box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); text-align: center; font-family: 'Consolas', 'Courier New', monospace;">
+                <h2 style="color: #ef4444; font-size: 20px; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">🚨 EVASION PROTOCOL ACTIVE</h2>
+                <div style="color: #ef4444; font-size: 11px; margin-bottom: 16px; border: 1px dashed rgba(239, 68, 68, 0.4); padding: 8px; background: rgba(239, 68, 68, 0.05); line-height: 1.4;">
+                    AUTHORITIES INTERCEPTING SIGNAL!<br>Initiate evasion protocols!
+                </div>
+                <p id="smuggle-grid-instructions" style="color: #94a3b8; font-size: 12px; margin-bottom: 16px; line-height: 1.4; min-height: 34px;">
+                    Initializing firewall bypass...
+                </p>
+                
+                <!-- The 5x5 Grid -->
+                <div id="smuggle-grid-board" class="smuggle-grid" style="margin: 0 auto 20px auto;">
+                    <!-- Grid cells generated dynamically in JS -->
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; color: #38bdf8; font-size: 12px; margin-bottom: 16px; padding: 0 10px;">
+                    <span>Relays Found: <span id="smuggle-grid-progress" style="font-weight: bold; color: #4ade80;">0 / 5</span></span>
+                    <span id="smuggle-grid-timer" style="font-weight: bold; color: #ef4444;">1.5s</span>
+                </div>
+                
+                <button id="smuggle-grid-action-btn" class="btn" style="background: #1e293b; border: 1px solid #475569; color: white;" disabled>
+                    Initializing...
+                </button>
+            </div>
+        </div>
+
+
+        <div class="version-tag">MechanicOS Evaluation Copy. Build v0.2.3</div>
+
+        <!-- OS Notification Center -->
+        <div id="os-notification-center" class="os-notification-center"></div>
+
+        <div id="news-ticker-container">
+            <span id="news-ticker-content">>>> MECHANICOS GLOBAL NETWORK ONLINE. NO MAJOR EVENTS REPORTED. <<<</span>
+        </div>
+
+        <!-- Bottom Taskbar -->
+        <div id="taskbar">
+            <div class="taskbar-left">
+                <div id="start-menu-btn" class="start-btn">MechanicOS v0.2.3</div>
+            </div>
+            <div class="taskbar-tabs" id="taskbar-windows">
+                <!-- Taskbar tabs are managed dynamically in game.js -->
+            </div>
+            <div class="taskbar-right">
+                <button id="cleanup-windows-btn" class="taskbar-tab" style="margin-right: 12px;" title="Auto-Align Open Windows">🧹 Cleanup</button>
+                <div class="taskbar-cash">Cash: $<span id="money-display">50</span></div>
+                <div class="taskbar-clock" id="taskbar-clock">12:00 PM</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="backend-config.js"></script>
+    <script src="backend.js"></script>
+    <script src="game.js?v=0.2.9"></script>
+    <div id="os-toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+</body>
+
+</html>
