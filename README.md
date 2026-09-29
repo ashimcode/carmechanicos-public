@@ -137,6 +137,8 @@ The map asset is a square canvas. The original layout stretched it into the wide
 
 The detailed development narrative lives in [docs/BUILD-LOG.md](docs/BUILD-LOG.md), including the transition from OS simulation to empire systems, risk mechanics, the map correction, and the planned 3D evolution.
 
+For an interviewer-friendly explanation of the architecture, hardening decisions, verification, and current limitations, see [docs/INTERVIEW_WALKTHROUGH.md](docs/INTERVIEW_WALKTHROUGH.md).
+
 For assistant continuity, see [docs/OPENCLAW_PROJECT_CONTEXT.md](docs/OPENCLAW_PROJECT_CONTEXT.md). It is the canonical handoff record for OpenClaw/Atlas and future development sessions.
 
 ## Screenshot gallery
