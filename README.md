@@ -75,7 +75,7 @@ CarMechanicOS is built as a browser-first simulation with a small, replaceable p
 | **Cloudflare Tunnel** | Publishes the local server through `https://carmechanicos.com` | Connected; routes to `127.0.0.1:5501` |
 | **Supabase** | Optional authenticated cloud persistence for `player_saves` | Adapter and `auth.uid()`-scoped schema prepared; explicit token configuration required |
 | **Atlas** | Future operations/memory layer for project status, routines, and telemetry | Separate service boundary; no game credentials are copied into Atlas |
-| **Git / GitHub** | Source control, documentation, and project history | Repository: `ashimcode/carmechanicos-public` |
+| **Git / GitHub** | Source control, documentation, and public release snapshot | Repository: `ashimcode/carmechanicos-public` |
 
 ### Data flow
 
