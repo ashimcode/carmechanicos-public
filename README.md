@@ -211,7 +211,7 @@ The visual language is a slate-and-charcoal enterprise terminal: crisp typograph
 - [ ] Add automated browser smoke tests for App Store installation, business purchase, and daily simulation accounting.
 - [ ] Finish the Junkyard salvage timing/grid experience and connect its rewards to progression.
 - [ ] Prototype the first 3D garage scene while keeping the existing simulation state authoritative.
-- [ ] Rotate the Discord webhook that was previously exposed in an older client build and configure a protected BugTracker proxy.
+- [x] Revoke the historical Discord webhook found in older development history; BugTracker remains disabled until a protected proxy is configured.
 - [ ] Add an account/authentication flow before enabling Supabase cloud saves for multiple players.
 
 When reporting a new issue, include the build number, app name, steps to reproduce, expected behavior, actual behavior, and a screenshot when possible. BugTracker.exe can submit runtime diagnostics, including heat and inventory state.
@@ -255,6 +255,6 @@ Before every push, verify that the repository contains no Supabase service-role 
 
 Atlas can provide a seamless dashboard for this project by tracking the repository, latest commit, live URL, Cloudflare health, and future Supabase migrations. That requires an Atlas-side connector or read-only status integration; it should not copy secrets into the dashboard.
 
-## License
+## License and asset rights
 
-This project is currently a private prototype. Licensing and redistribution terms will be added before public release.
+This repository is a sanitized public portfolio snapshot. It does not currently grant broad source-code or asset reuse rights. Review the [asset and license record](docs/ASSET_RIGHTS_REVIEW.md) before redistributing the code, screenshots, map, video, fonts, or externally hosted visual assets. A future license decision must distinguish code ownership from third-party asset terms.

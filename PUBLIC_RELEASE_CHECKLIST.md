@@ -4,13 +4,13 @@ This checklist is the release gate for maintaining the public CarMechanicOS port
 
 ## Current release record
 
-The initial public snapshot was rechecked on 2026-09-28. One historical Discord webhook found in the private development history was revoked at the provider (HTTP 204). The public tree contains no webhook URL, private-key marker, or machine-specific `[local Windows path]` path. License and third-party asset-rights review remain open before implying broad reuse rights.
+The initial public snapshot was rechecked on 2026-09-28. One historical Discord webhook found in the private development history was revoked at the provider (HTTP 204). The public tree contains no webhook URL, private-key marker, or machine-specific `[local Windows path]` path. The public repository is suitable for portfolio inspection, while the code-license and third-party asset-rights review remain open before implying broad reuse rights.
 
 ## Required actions for future public changes
 
 1. Re-run a history-wide secret scan and a current-tree scan. Check Discord webhooks, Supabase service-role keys, Cloudflare tunnel tokens, bearer tokens, private keys, database dumps, browser state, local paths, and personal data.
 2. Confirm `backend-config.js`, `.env*`, tunnel logs, local databases, keys, and runtime state remain untracked. Only a browser-safe Supabase publishable/anon key may appear in a client build, and only with strict authenticated Row Level Security.
-3. Remove or separately license every third-party binary, font, image, screenshot, map, and audio/video asset. Keep evidence that the repository has redistribution rights.
+3. Review every third-party binary, font, image, screenshot, map, and audio/video asset using [docs/ASSET_RIGHTS_REVIEW.md](docs/ASSET_RIGHTS_REVIEW.md). Remove or separately license anything without documented redistribution rights.
 4. Choose and add an explicit repository license. Until then, do not imply that the source or assets are freely reusable.
 5. Test a fresh local checkout with no ignored configuration: localStorage gameplay, factory reset, save/reload, and the local server should work without cloud credentials.
 6. Run the repository checks:
