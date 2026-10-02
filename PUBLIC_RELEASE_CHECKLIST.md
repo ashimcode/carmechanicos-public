@@ -4,7 +4,7 @@ This checklist is the release gate for maintaining the public CarMechanicOS port
 
 ## Current release record
 
-The initial public snapshot was rechecked on 2026-09-28. One historical Discord webhook found in the private development history was revoked at the provider (HTTP 204). The public tree contains no webhook URL, private-key marker, or machine-specific `[local Windows path]` path. The public repository is suitable for portfolio inspection, while the code-license and third-party asset-rights review remain open before implying broad reuse rights.
+The initial public snapshot was rechecked on 2026-09-28. One historical Discord webhook found in the private development history was revoked at the provider (HTTP 204). The public tree contains no webhook URL, private-key marker, or machine-specific local path. The public repository is suitable for portfolio inspection, while the code-license and third-party asset-rights review remain open before implying broad reuse rights.
 
 ## Required actions for future public changes
 
